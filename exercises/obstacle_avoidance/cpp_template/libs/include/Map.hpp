@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include "common_interfaces_cpp/hal/odometry.hpp"
 #include "common_interfaces_cpp/hal/laser.hpp"
@@ -32,7 +33,7 @@ public:
     void setAvg(double x, double y);
     void setTargetPos(double x, double y);
     
-    std::string get_json_data();
+    nlohmann::json get_json_data();
     std::shared_ptr<Target> getNextTarget();
     void reset();
 
@@ -45,6 +46,7 @@ private:
     double carx, cary, obsx, obsy, avgx, avgy;
     std::vector<std::shared_ptr<Target>> targets_;
     nlohmann::json payload_;
+    std::mutex data_mutex_;
 
     std::function<LaserData()> laser_callback_;
     std::function<Pose3d()> pose_callback_;

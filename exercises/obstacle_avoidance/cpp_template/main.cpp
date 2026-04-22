@@ -36,34 +36,42 @@ void start_console()
   {
     std::cerr << "Error redirecting stdin!" << std::endl;
   }
-};
+}
 
 int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
   start_console();
 
-  rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 2);
-
-  auto HAL_node = std::make_shared<HAL>();
-  executor.add_node(HAL_node);
-
-  auto WebGUI_node = std::make_shared<WebGUINode>();
-  executor.add_node(WebGUI_node);
+  auto WebGUI_node = std::make_shared<WebGUI>();
+  rclcpp::executors::SingleThreadedExecutor gui_executor;
+  for (const auto& node : WebGUI_node->get_nodes()) {
+    gui_executor.add_node(node);
+  }
 
 #ifdef USER_NODE
   auto user_node = std::make_shared<UserNode>();
-  executor.add_node(user_node);
-#else
-  std::thread user(exercise);
-#endif
-  std::thread ros([&executor]{executor.spin();});
-  WebGUI();
+  rclcpp::executors::SingleThreadedExecutor user_executor;
+  user_executor.add_node(user_node);
 
-#ifndef USER_NODE
-  user.join();
+  std::thread gui_ros([&gui_executor]{ gui_executor.spin(); });
+  std::thread user_ros([&user_executor]{ user_executor.spin(); });
+
+  gui_ros.join();
+  user_ros.join();
+#else
+  auto HAL_node = std::make_shared<HAL>();
+  rclcpp::executors::SingleThreadedExecutor hal_executor;
+  hal_executor.add_node(HAL_node);
+
+  std::thread gui_ros([&gui_executor]{ gui_executor.spin(); });
+  std::thread hal_ros([&hal_executor]{ hal_executor.spin(); });
+  std::thread user_api(exercise);
+
+  user_api.join();
+  gui_ros.join();
+  hal_ros.join();
 #endif
-  ros.join();
 
   rclcpp::shutdown();
   return 0;

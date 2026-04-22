@@ -25,26 +25,19 @@ find_package(nlohmann_json REQUIRED)
 set(COMMON_INTERFACES_INCLUDE "/home/ws/install/common_interfaces_cpp/include")
 set(COMMON_INTERFACES_LIB "/home/ws/install/common_interfaces_cpp/lib/libcommon_interfaces_cpp.so")
 
-set(WEBGUI_ROS_DEPS  rclcpp geometry_msgs std_msgs nav_msgs sensor_msgs)
+set(WEBGUI_ROS_DEPS  rclcpp nav_msgs geometry_msgs sensor_msgs std_msgs)
 set(WEBGUI_SYS_DEPS  Frequency Boost::system nlohmann_json::nlohmann_json)
-set(HAL_ROS_DEPS     rclcpp geometry_msgs sensor_msgs nav_msgs)
-
+set(HAL_ROS_DEPS     rclcpp geometry_msgs sensor_msgs std_msgs nav_msgs)
 
 # --- libFrequency.so ---
 add_library(Frequency SHARED src/Frequency.cpp)
 target_include_directories(Frequency PUBLIC include)
 
-
 # --- libWebGUI.so ---
-add_library(WebGUI SHARED 
-    src/WebGUI.cpp 
-    src/Map.cpp 
-    src/Lap.cpp
-)
+add_library(WebGUI SHARED src/WebGUI.cpp src/Lap.cpp src/Map.cpp)
 target_include_directories(WebGUI PUBLIC include ${COMMON_INTERFACES_INCLUDE})
 ament_target_dependencies(WebGUI ${WEBGUI_ROS_DEPS})
 target_link_libraries(WebGUI ${WEBGUI_SYS_DEPS} ${COMMON_INTERFACES_LIB})
-
 
 # --- libHAL.so ---
 add_library(HAL SHARED src/HAL.cpp)
